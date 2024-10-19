@@ -11,7 +11,7 @@ namespace Task0.Automation
         {
             while (true)
             {
-                Console.WriteLine("\nМеню:");
+                Console.WriteLine("Меню:");
                 Console.WriteLine("1) DKA (Детерминированный КА)");
                 Console.WriteLine("2) NKA (Недетерминированный КА)");
                 Console.WriteLine("3) NKA с ε-переходами (Недетерминированный КА с эпсилон переходами)");
@@ -19,6 +19,7 @@ namespace Task0.Automation
                 Console.Write("\nВыберите автомат (1, 2, 3) или введите '4' для выхода: ");
 
                 string choice = Console.ReadLine();
+                Console.WriteLine();
 
                 switch (choice)
                 {
@@ -32,6 +33,7 @@ namespace Task0.Automation
 
                             Console.WriteLine("\nВведите слово для обработки (или 'exit' для завершения, 'menu' для возврата в меню):");
                             string input = Console.ReadLine();
+                            Console.WriteLine();
 
                             if (input.ToLower() == "exit")
                             {
