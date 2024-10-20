@@ -1,4 +1,4 @@
-﻿namespace RcursiveDescentParser.Grammar
+﻿namespace SemanticAnalyzer.Grammar
 {
     public enum TokenType
     {
@@ -8,6 +8,7 @@
         SEMICOLON,
         COLON,
         PLUS,
+        MINUS,
         MULT,
         OPENPAREN,
         CLOSEPAREN,

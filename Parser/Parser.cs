@@ -1,13 +1,16 @@
 ﻿using RcursiveDescentParser.Grammar;
-using RcursiveDescentParser.Lexer;
+using RcursiveDescentParser.Postfix;
+using SemanticAnalyzer.Grammar;
+using SemanticAnalyzer.Lexer;
 using System;
 using System.Collections.Generic;
 
-namespace RcursiveDescentParser.Parser
+namespace SemanticAnalyzer.Parser
 {
     public class Parser
     {
         private readonly List<Token> _tokens;
+        private PostfixForm _postfix;
         private int _currentTokenIndex;
 
         #region Constructor and Helpers
@@ -15,6 +18,7 @@ namespace RcursiveDescentParser.Parser
         {
             _tokens = tokens;
             _currentTokenIndex = 0;
+            _postfix = new PostfixForm();
         }
 
         private Token CurrentToken
@@ -39,10 +43,6 @@ namespace RcursiveDescentParser.Parser
 
         private void Match(TokenType expectedType)
         {
-            if (_currentTokenIndex >= _tokens.Count)
-            {
-                throw new Exception($"Ошибка: ожидался {expectedType}, но входная строка завершилась.");
-            }
             if (CurrentToken.Type == expectedType)
             {
                 _currentTokenIndex++;
@@ -57,125 +57,84 @@ namespace RcursiveDescentParser.Parser
         #region Assignment and Expression Parsing
         public void ParseAssignment()
         {
-            if (HasMoreTokens() && CurrentToken.Type == TokenType.ID)
+            if (CurrentToken.Type == TokenType.ID)
             {
+                _postfix.WriteVar(CurrentToken.Value);
                 Match(TokenType.ID);
                 Match(TokenType.ASSIGN);
+
                 ParseExpression();
 
-                if (HasMoreTokens() && CurrentToken.Type == TokenType.SEMICOLON)
+                _postfix.WriteCmd(ECmd.SET);
+
+                if (CurrentToken.Type == TokenType.SEMICOLON)
                 {
                     Match(TokenType.SEMICOLON);
                 }
                 else
                 {
-                    throw new Exception("Ошибка: ожидается ';' в конце выражения.");
+                    throw new Exception("Ошибка: Ожидалась ';' после присваивания.");
                 }
-            }
-            else
-            {
-                throw new Exception("Ошибка: ожидался идентификатор перед присваиванием.");
             }
         }
 
         private void ParseExpression()
         {
             ParseTerm();
-
-            while (HasMoreTokens() && CurrentToken.Type == TokenType.PLUS)
+            while (CurrentToken.Type == TokenType.PLUS || CurrentToken.Type == TokenType.MINUS)
             {
-                Match(TokenType.PLUS);
-                ParseTerm();
+                if (CurrentToken.Type == TokenType.PLUS)
+                {
+                    Match(TokenType.PLUS);
+                    ParseTerm();
+                    _postfix.WriteCmd(ECmd.ADD);
+                }
+                else if (CurrentToken.Type == TokenType.MINUS)
+                {
+                    Match(TokenType.MINUS);
+                    ParseTerm();
+                    _postfix.WriteCmd(ECmd.SUB);
+                }
             }
         }
 
         private void ParseTerm()
         {
             ParseFactor();
-
             while (CurrentToken.Type == TokenType.MULT || CurrentToken.Type == TokenType.DIV)
             {
                 if (CurrentToken.Type == TokenType.MULT)
                 {
                     Match(TokenType.MULT);
+                    ParseFactor();
+                    _postfix.WriteCmd(ECmd.MUL);
                 }
                 else if (CurrentToken.Type == TokenType.DIV)
                 {
                     Match(TokenType.DIV);
+                    ParseFactor();
+                    _postfix.WriteCmd(ECmd.DIV);
                 }
-
-                ParseFactor();
             }
         }
 
         private void ParseFactor()
         {
-            if (HasMoreTokens() && CurrentToken.Type == TokenType.ID)
+            if (CurrentToken.Type == TokenType.ID)
             {
+                _postfix.WriteVar(CurrentToken.Value);
                 Match(TokenType.ID);
-                if (HasMoreTokens() && CurrentToken.Type == TokenType.OPENPAREN)
-                {
-                    Match(TokenType.OPENPAREN);
-                    ParseParameters();
-                    Match(TokenType.CLOSEPAREN);
-                }
             }
-            else if (HasMoreTokens() && CurrentToken.Type == TokenType.CONST)
+            else if (CurrentToken.Type == TokenType.CONST)
             {
+                _postfix.WriteConst(int.Parse(CurrentToken.Value));
                 Match(TokenType.CONST);
             }
-            else if (HasMoreTokens() && CurrentToken.Type == TokenType.OPENPAREN)
-            {
-                Match(TokenType.OPENPAREN);
-                ParseExpression();
-                Match(TokenType.CLOSEPAREN);
-            }
             else
             {
-                throw new Exception("Ошибка: ожидался идентификатор, константа или выражение в скобках");
+                throw new Exception("Ожидалось арифметическое выражение");
             }
         }
-
-        private void ParseParameters()
-        {
-            ParseExpression();
-
-            while (CurrentToken.Type == TokenType.COLON)
-            {
-                Match(TokenType.COLON);
-                ParseExpression();
-            }
-        }
-
-        public void ParseDeclarationOrAssignment()
-        {
-            if (HasMoreTokens() && IsTypeKeyword(CurrentToken))
-            {
-                Match(CurrentToken.Type);
-                Match(TokenType.ID);
-                Match(TokenType.ASSIGN);
-                ParseExpression();
-
-                if (HasMoreTokens() && CurrentToken.Type == TokenType.SEMICOLON)
-                {
-                    Match(TokenType.SEMICOLON);
-                }
-                else
-                {
-                    throw new Exception("Ошибка: ожидается ';' в конце объявления переменной.");
-                }
-            }
-            else
-            {
-                ParseAssignment();
-            }
-        }
-
-        private bool IsTypeKeyword(Token token)
-        {
-            return token.Value == "int" || token.Value == "float" || token.Value == "double";
-        }
-
         #endregion
 
         #region Logical and Relational Expressions
@@ -188,13 +147,15 @@ namespace RcursiveDescentParser.Parser
                 if (CurrentToken.Type == TokenType.AND)
                 {
                     Match(TokenType.AND);
+                    ParseRelationalExpression();
+                    _postfix.WriteCmd(ECmd.AND);
                 }
-                else
+                else if (CurrentToken.Type == TokenType.OR)
                 {
                     Match(TokenType.OR);
+                    ParseRelationalExpression();
+                    _postfix.WriteCmd(ECmd.OR);
                 }
-
-                ParseRelationalExpression();
             }
         }
 
@@ -204,8 +165,31 @@ namespace RcursiveDescentParser.Parser
 
             if (CurrentToken.Type == TokenType.REL)
             {
+                string relOp = CurrentToken.Value;
                 Match(TokenType.REL);
+
                 ParseOperand();
+
+                switch (relOp)
+                {
+                    case ">":
+                        _postfix.WriteCmd(ECmd.CMPL);
+                        break;
+                    case "<":
+                        _postfix.WriteCmd(ECmd.CMPL);
+                        break;
+                    case ">=":
+                        _postfix.WriteCmd(ECmd.CMPLE);
+                        break;
+                    case "<=":
+                        _postfix.WriteCmd(ECmd.CMPLE);
+                        break;
+                    case "==":
+                        _postfix.WriteCmd(ECmd.CMPE);
+                        break;
+                    default:
+                        throw new Exception($"Неизвестная операция сравнения: {relOp}");
+                }
             }
         }
 
@@ -213,10 +197,12 @@ namespace RcursiveDescentParser.Parser
         {
             if (CurrentToken.Type == TokenType.ID)
             {
+                _postfix.WriteVar(CurrentToken.Value);
                 Match(TokenType.ID);
             }
             else if (CurrentToken.Type == TokenType.CONST)
             {
+                _postfix.WriteConst(int.Parse(CurrentToken.Value));
                 Match(TokenType.CONST);
             }
             else
@@ -226,124 +212,35 @@ namespace RcursiveDescentParser.Parser
         }
         #endregion
 
-        #region Loop and Statement Parsing
-        public void ParseDoWhileLoop()
+        #region Loop Parsing
+        public void ParseDoLoopUntil()
         {
+            int startLoopIndex = _postfix.WriteCmdPtr(-1);
+
             Match(TokenType.DO);
 
-            while (CurrentToken.Type != TokenType.LOOP && HasMoreTokens())
+            while (CurrentToken.Type != TokenType.LOOP)
             {
-                ParseStatement();
+                ParseAssignment();
             }
 
             Match(TokenType.LOOP);
             Match(TokenType.UNTIL);
 
             ParseLogicalExpression();
-        }
 
-        public void ParseForLoop()
-        {
-            if (CurrentToken.Type == TokenType.FOR)
-            {
-                Match(TokenType.FOR);
-                Match(TokenType.OPENPAREN);
+            int conditionJmpIndex = _postfix.WriteCmd(ECmd.JZ);
 
-                ParseDeclarationOrAssignment();
+            _postfix.WriteCmdPtr(startLoopIndex);
+            _postfix.WriteCmd(ECmd.JMP);
 
-                ParseRelationalExpression();
-
-                Match(TokenType.SEMICOLON);
-
-                ParseIncrement();
-
-                Match(TokenType.CLOSEPAREN);
-
-                ParseStatement();
-            }
-            else
-            {
-                throw new Exception("Ошибка: ожидался оператор for.");
-            }
-        }
-
-        public void ParseWhileLoop()
-        {
-            if (CurrentToken.Type == TokenType.WHILE)
-            {
-                Match(TokenType.WHILE);
-                ParseLogicalExpression();
-
-                Match(TokenType.DO);
-
-                ParseStatement();
-
-                Match(TokenType.END);
-            }
-            else
-            {
-                throw new Exception("Ошибка: ожидался оператор while.");
-            }
-        }
-
-        private void ParseIncrement()
-        {
-            if (CurrentToken.Type == TokenType.ID)
-            {
-                Match(TokenType.ID);
-
-                if (HasMoreTokens() && CurrentToken.Type == TokenType.INCREMENT)
-                {
-                    Match(TokenType.INCREMENT);
-                }
-                else if (HasMoreTokens() && CurrentToken.Type == TokenType.ASSIGN)
-                {
-                    Match(TokenType.ASSIGN);
-                    ParseExpression();
-                }
-                else
-                {
-                    throw new Exception("Ошибка: ожидался инкремент или присваивание.");
-                }
-            }
-            else
-            {
-                throw new Exception("Ошибка: ожидался идентификатор в инкременте цикла for.");
-            }
-        }
-
-        public void ParseStatement()
-        {
-            if (CurrentToken.Type == TokenType.ID)
-            {
-                ParseAssignment();
-            }
-            else if (CurrentToken.Type == TokenType.FOR)
-            {
-                ParseForLoop();
-            }
-            else if (CurrentToken.Type == TokenType.WHILE)
-            {
-                ParseWhileLoop();
-            }
-            else if (CurrentToken.Type == TokenType.DO)
-            {
-                ParseDoWhileLoop();
-            }
-            else if (CurrentToken.Type == TokenType.OPENBRACE)
-            {
-                Match(TokenType.OPENBRACE);
-                while (HasMoreTokens() && CurrentToken.Type != TokenType.CLOSEBRACE)
-                {
-                    ParseStatement();
-                }
-                Match(TokenType.CLOSEBRACE);
-            }
-            else
-            {
-                throw new Exception("Ошибка: неизвестный оператор.");
-            }
+            _postfix.SetCmdPtr(conditionJmpIndex, _postfix.GetCurrentAddress() + 1);
         }
         #endregion
+
+        public void PrintPostfix()
+        {
+            _postfix.PrintPostfix();
+        }
     }
 }

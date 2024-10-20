@@ -43,10 +43,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Grammar\ECmd.cs" />
+    <Compile Include="Grammar\EEntryType.cs" />
     <Compile Include="Grammar\TokenType.cs" />
     <Compile Include="Lexer\Lexer.cs" />
     <Compile Include="Lexer\Token.cs" />
     <Compile Include="Parser\Parser.cs" />
+    <Compile Include="Postfix\PostfixEntry.cs" />
+    <Compile Include="Postfix\PostfixForm.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

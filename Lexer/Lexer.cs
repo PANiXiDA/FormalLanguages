@@ -1,8 +1,8 @@
-﻿using RcursiveDescentParser.Grammar;
+﻿using SemanticAnalyzer.Grammar;
 using System;
 using System.Collections.Generic;
 
-namespace RcursiveDescentParser.Lexer
+namespace SemanticAnalyzer.Lexer
 {
     public class Lexer
     {

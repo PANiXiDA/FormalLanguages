@@ -1,6 +1,6 @@
-﻿using RcursiveDescentParser.Grammar;
+﻿using SemanticAnalyzer.Grammar;
 
-namespace RcursiveDescentParser.Lexer
+namespace SemanticAnalyzer.Lexer
 {
     public class Token
     {

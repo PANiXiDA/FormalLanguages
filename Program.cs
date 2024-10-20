@@ -1,36 +1,31 @@
-﻿using System;
+﻿using SemanticAnalyzer.Lexer;
+using SemanticAnalyzer.Parser;
+using System;
+using System.Collections.Generic;
 
-namespace RcursiveDescentParser
+namespace SemanticAnalyzer
 {
-    public class Program
+    class Program
     {
         static void Main(string[] args)
         {
-            while (true)
+            Console.WriteLine("Введите выражение для обработки:");
+            string input = Console.ReadLine();
+
+            try
             {
-                Console.WriteLine("Введите выражение или exit для выхода:");
-                string input = Console.ReadLine();
+                var lexer = new Lexer.Lexer(input);
+                List<Token> tokens = lexer.Tokenize();
 
-                if (input.ToLower() == "exit")
-                {
-                    Console.WriteLine();
-                    break;
-                }
-                try
-                {
-                    var lexer = new Lexer.Lexer(input);
-                    var tokens = lexer.Tokenize();
+                var parser = new Parser.Parser(tokens);
+                parser.ParseDoLoopUntil();
 
-                    var parser = new Parser.Parser(tokens);
-
-                    parser.ParseStatement();
-                    Console.WriteLine("Анализ успешно завершен.");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
-                Console.WriteLine();
+                Console.WriteLine("Сгенерированный ПОЛИЗ:");
+                parser.PrintPostfix();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка: {ex.Message}");
             }
         }
     }
