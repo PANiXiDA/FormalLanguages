@@ -44,6 +44,11 @@ namespace LexicalAnalyzer.Lexer
                     var symbol = ReadWhile(c => c == '+' || c == '-');
                     tokens.Add(new Token(symbol, TokenType.ArithmeticOperator, _position));
                 }
+                else if (CurrentChar() == '/' || CurrentChar() == '*')
+                {
+                    var symbol = ReadWhile(c => c == '/' || c == '*');
+                    tokens.Add(new Token(symbol, TokenType.AssignmentOperator, _position));
+                }
                 else
                 {
                     tokens.Add(new Token(CurrentChar().ToString(), TokenType.Unknown, _position));
