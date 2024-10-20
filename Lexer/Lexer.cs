@@ -11,7 +11,7 @@ namespace RcursiveDescentParser.Lexer
 
         public Lexer(string input)
         {
-            _input = input;
+            _input = input.ToLower();
             _position = 0;
         }
 
@@ -51,6 +51,14 @@ namespace RcursiveDescentParser.Lexer
                     else if (identifier == "do")
                     {
                         tokens.Add(new Token(TokenType.DO, identifier));
+                    }
+                    else if (identifier == "loop")
+                    {
+                        tokens.Add(new Token(TokenType.LOOP, identifier));
+                    }
+                    else if (identifier == "until")
+                    {
+                        tokens.Add(new Token(TokenType.UNTIL, identifier));
                     }
                     else if (identifier == "end")
                     {
@@ -150,6 +158,10 @@ namespace RcursiveDescentParser.Lexer
                         break;
                     case ':':
                         tokens.Add(new Token(TokenType.COLON, ":"));
+                        _position++;
+                        break;
+                    case '/':
+                        tokens.Add(new Token(TokenType.DIV, "/"));
                         _position++;
                         break;
                     default:

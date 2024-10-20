@@ -93,9 +93,17 @@ namespace RcursiveDescentParser.Parser
         {
             ParseFactor();
 
-            while (CurrentToken.Type == TokenType.MULT)
+            while (CurrentToken.Type == TokenType.MULT || CurrentToken.Type == TokenType.DIV)
             {
-                Match(TokenType.MULT);
+                if (CurrentToken.Type == TokenType.MULT)
+                {
+                    Match(TokenType.MULT);
+                }
+                else if (CurrentToken.Type == TokenType.DIV)
+                {
+                    Match(TokenType.DIV);
+                }
+
                 ParseFactor();
             }
         }
@@ -219,6 +227,21 @@ namespace RcursiveDescentParser.Parser
         #endregion
 
         #region Loop and Statement Parsing
+        public void ParseDoWhileLoop()
+        {
+            Match(TokenType.DO);
+
+            while (CurrentToken.Type != TokenType.LOOP && HasMoreTokens())
+            {
+                ParseStatement();
+            }
+
+            Match(TokenType.LOOP);
+            Match(TokenType.UNTIL);
+
+            ParseLogicalExpression();
+        }
+
         public void ParseForLoop()
         {
             if (CurrentToken.Type == TokenType.FOR)
@@ -302,6 +325,10 @@ namespace RcursiveDescentParser.Parser
             else if (CurrentToken.Type == TokenType.WHILE)
             {
                 ParseWhileLoop();
+            }
+            else if (CurrentToken.Type == TokenType.DO)
+            {
+                ParseDoWhileLoop();
             }
             else if (CurrentToken.Type == TokenType.OPENBRACE)
             {

@@ -20,6 +20,9 @@
         CLOSEBRACE,
         OPENBRACE,
         INCREMENT,
-        FOR
+        FOR,
+        LOOP,
+        UNTIL,
+        DIV
     }
 }
