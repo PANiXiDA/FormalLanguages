@@ -1,4 +1,4 @@
-﻿namespace RcursiveDescentParser.Grammar
+﻿namespace Interpreter.Grammar
 {
     public enum ECmd
     {
@@ -14,6 +14,8 @@
         CMPL,
         CMPLE,
         MUL,
-        DIV
+        DIV,
+        CMPG,
+        CMPGE
     }
 }

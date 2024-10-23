@@ -1,11 +1,10 @@
-﻿using RcursiveDescentParser.Grammar;
-using RcursiveDescentParser.Postfix;
-using SemanticAnalyzer.Grammar;
-using SemanticAnalyzer.Lexer;
+﻿using Interpreter.Grammar;
+using Interpreter.Postfix;
+using Interpreter.Lexer;
 using System;
 using System.Collections.Generic;
 
-namespace SemanticAnalyzer.Parser
+namespace Interpreter.Parser
 {
     public class Parser
     {
@@ -59,13 +58,14 @@ namespace SemanticAnalyzer.Parser
         {
             if (CurrentToken.Type == TokenType.ID)
             {
-                _postfix.WriteVar(CurrentToken.Value);
+                string varName = CurrentToken.Value;
                 Match(TokenType.ID);
                 Match(TokenType.ASSIGN);
 
                 ParseExpression();
 
                 _postfix.WriteCmd(ECmd.SET);
+                _postfix.PushVar(varName);
 
                 if (CurrentToken.Type == TokenType.SEMICOLON)
                 {
@@ -122,12 +122,12 @@ namespace SemanticAnalyzer.Parser
         {
             if (CurrentToken.Type == TokenType.ID)
             {
-                _postfix.WriteVar(CurrentToken.Value);
+                _postfix.PushVar(CurrentToken.Value);
                 Match(TokenType.ID);
             }
             else if (CurrentToken.Type == TokenType.CONST)
             {
-                _postfix.WriteConst(int.Parse(CurrentToken.Value));
+                _postfix.PushConst(int.Parse(CurrentToken.Value));
                 Match(TokenType.CONST);
             }
             else
@@ -156,6 +156,11 @@ namespace SemanticAnalyzer.Parser
                     ParseRelationalExpression();
                     _postfix.WriteCmd(ECmd.OR);
                 }
+
+                if (_currentTokenIndex == _tokens.Count)
+                {
+                    break;
+                }
             }
         }
 
@@ -173,13 +178,13 @@ namespace SemanticAnalyzer.Parser
                 switch (relOp)
                 {
                     case ">":
-                        _postfix.WriteCmd(ECmd.CMPL);
+                        _postfix.WriteCmd(ECmd.CMPG);
                         break;
                     case "<":
                         _postfix.WriteCmd(ECmd.CMPL);
                         break;
                     case ">=":
-                        _postfix.WriteCmd(ECmd.CMPLE);
+                        _postfix.WriteCmd(ECmd.CMPGE);
                         break;
                     case "<=":
                         _postfix.WriteCmd(ECmd.CMPLE);
@@ -197,12 +202,12 @@ namespace SemanticAnalyzer.Parser
         {
             if (CurrentToken.Type == TokenType.ID)
             {
-                _postfix.WriteVar(CurrentToken.Value);
+                _postfix.PushVar(CurrentToken.Value);
                 Match(TokenType.ID);
             }
             else if (CurrentToken.Type == TokenType.CONST)
             {
-                _postfix.WriteConst(int.Parse(CurrentToken.Value));
+                _postfix.PushConst(int.Parse(CurrentToken.Value));
                 Match(TokenType.CONST);
             }
             else
@@ -215,11 +220,11 @@ namespace SemanticAnalyzer.Parser
         #region Loop Parsing
         public void ParseDoLoopUntil()
         {
-            int startLoopIndex = _postfix.WriteCmdPtr(-1);
+            int startLoopIndex = _postfix.GetCurrentAddress();
 
             Match(TokenType.DO);
 
-            while (CurrentToken.Type != TokenType.LOOP)
+            while (HasMoreTokens() && CurrentToken.Type != TokenType.LOOP)
             {
                 ParseAssignment();
             }
@@ -229,18 +234,21 @@ namespace SemanticAnalyzer.Parser
 
             ParseLogicalExpression();
 
-            int conditionJmpIndex = _postfix.WriteCmd(ECmd.JZ);
+            int jzIndex = _postfix.WriteCmd(ECmd.JZ);
 
-            _postfix.WriteCmdPtr(startLoopIndex);
             _postfix.WriteCmd(ECmd.JMP);
-
-            _postfix.SetCmdPtr(conditionJmpIndex, _postfix.GetCurrentAddress() + 1);
+            _postfix.SetCmdPtr(jzIndex, _postfix.GetCurrentAddress() + 1);
         }
         #endregion
 
         public void PrintPostfix()
         {
             _postfix.PrintPostfix();
+        }
+
+        public PostfixForm GetPostfixForm()
+        {
+            return _postfix;
         }
     }
 }

@@ -1,6 +1,6 @@
-﻿using RcursiveDescentParser.Grammar;
+﻿using Interpreter.Grammar;
 
-namespace RcursiveDescentParser.Postfix
+namespace Interpreter.Postfix
 {
     public class PostfixEntry
     {

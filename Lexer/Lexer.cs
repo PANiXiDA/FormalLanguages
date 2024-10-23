@@ -1,8 +1,8 @@
-﻿using SemanticAnalyzer.Grammar;
+﻿using Interpreter.Grammar;
 using System;
 using System.Collections.Generic;
 
-namespace SemanticAnalyzer.Lexer
+namespace Interpreter.Lexer
 {
     public class Lexer
     {
@@ -129,7 +129,7 @@ namespace SemanticAnalyzer.Lexer
                         }
                         break;
                     case '-':
-                        tokens.Add(new Token(TokenType.PLUS, "-"));
+                        tokens.Add(new Token(TokenType.MINUS, "-"));
                         _position++;
                         break;
                     case '*':

@@ -1,6 +1,6 @@
-﻿using SemanticAnalyzer.Grammar;
+﻿using Interpreter.Grammar;
 
-namespace SemanticAnalyzer.Lexer
+namespace Interpreter.Lexer
 {
     public class Token
     {

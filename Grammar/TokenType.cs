@@ -1,4 +1,4 @@
-﻿namespace SemanticAnalyzer.Grammar
+﻿namespace Interpreter.Grammar
 {
     public enum TokenType
     {

@@ -1,10 +1,10 @@
-﻿namespace RcursiveDescentParser.Grammar
+﻿namespace Interpreter.Grammar
 {
     public enum EEntryType
     {
-        etCmd,
-        etVar,
-        etConst,
-        etCmdPtr
+        etCmd,      // Команда (например, ADD, SUB, MUL, DIV, JZ, JMP и т.д.)
+        etVar,      // Переменная (хэш-значение имени переменной, которая используется в выражении)
+        etConst,    // Константа (например, числовое значение, которое напрямую участвует в выражении)
+        etCmdPtr    // Указатель на команду (например, для команд перехода: JZ, JMP; адрес перехода в ПОЛИЗ)
     }
 }
